@@ -1,0 +1,10 @@
+<h1>All Snippets</h1>
+
+<ul>
+    {{#each snippets}}
+        <li>{{ name }} <a href="/users/delete/{{id}}">Remove</a>
+            <a href="/users/update/{{id}}">Update</a><br>
+             {{ snippets }} </li>
+    {{/each}}
+</ul>
+<a href="/users/create">Make new Snippets</a>
