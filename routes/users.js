@@ -7,10 +7,6 @@
 	var Snip = require('../models/snip');
 
 
-	// Register
-	router.get('/register', function(req, res){
-		res.render('register');
-	});
 
 	// Login
 	router.get('/login', function(req, res){
@@ -109,7 +105,11 @@
 		}
 	}
 
-	// Register User
+	// Register
+	router.get('/register', function(req, res){
+		res.render('register');
+	});
+
 	router.post('/register', function(req, res){
 		var name = req.body.name;
 		var email = req.body.email;
@@ -122,7 +122,7 @@
 		req.checkBody('email', 'Email is required').notEmpty();
 		req.checkBody('email', 'Email is not valid').isEmail();
 		req.checkBody('username', 'Username is required').notEmpty();
-		req.checkBody('password', 'Password is required').notEmpty();
+		req.checkBody('password', 'Password is required & minimum lenght of 6').notEmpty().isLength(6);
 		req.checkBody('password2', 'Passwords do not match').equals(req.body.password);
 
 		var errors = req.validationErrors();
@@ -141,7 +141,7 @@
 
 			User.createUser(newUser, function(err, user){
 				if(err) throw err;
-				console.log(user);
+				console.log(err);
 			});
 
 			req.flash('success_msg', 'You are registered and can now login');
