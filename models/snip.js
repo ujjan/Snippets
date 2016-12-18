@@ -5,8 +5,16 @@
 
     let snipSchema = mongoose.Schema({
 
-        name: { type: String, required: true , trim: true},
-        snippets: { type: String, required: true, trim: true, minlength: 1 }
+        name: {
+            type: String,
+            required: true,
+            trim: true},
+        snippets: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength: 1
+            }
 
     });
 

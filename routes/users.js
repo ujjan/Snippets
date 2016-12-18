@@ -2,9 +2,10 @@
 	var router = express.Router();
 	var passport = require('passport');
 	var LocalStrategy = require('passport-local').Strategy;
-
+	const {ObjectID} = require('mongodb');
 	var User = require('../models/user');
 	var Snip = require('../models/snip');
+	const _ = require('lodash');
 
 
 
@@ -50,6 +51,65 @@
 		});
 	});
 
+	//Update the Snippets ===================================================
+
+	router.get("/update/:id", function(req, res) {
+		// render the form, send along the id
+		var id = req.params.id;
+		Snip.findOne({_id:id},function (err, foundObject) {
+
+			if(err){
+				console.log(err);
+				res.status(500).send();
+			}
+			res.render("update", {id, name: foundObject.name, snippets: foundObject.snippets});
+		});
+
+	});
+/*
+
+	router.patch('/update/:id', (req, res) => {
+		var id = req.params.id;
+		var body = _.pick(req.body, ['name', 'snippets']);
+
+		if (!ObjectID.isValid(id)) {
+			return res.status(404).send();
+		}
+
+
+		Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
+			if (!snip) {
+				return res.status(404).send();
+				res.redirect("/users/snippets")
+			}
+
+			res.send({snip});
+		}).catch((e) => {
+			res.status(400).send();
+		});
+	});
+
+
+	*/
+
+
+
+	router.put('/update/:id', function (req, res) {
+
+	 var id = req.params.id;
+	 Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
+	 if (!snip) {
+	 return res.status(404).send();
+	 res.redirect("/users/snippets")
+	 }
+
+	 res.send({snip});
+	 }).catch((e) => {
+	 res.status(400).send();
+	 });
+
+	});
+
 	//Deleting the Snippets========================================
 
 	router.get("/delete/:id", ensureAuthenticated, function(req, res) {
@@ -69,7 +129,7 @@
 
 	//Get att the Snippets =========================================
 
-	router.get('/snippets', (req, res) => {
+	router.get('/snippets', ensureAuthenticated, (req, res) => {
 
 		Snip.find({}, function (error, data) {
 
@@ -83,15 +143,33 @@
 					};
 				}),
 			};
-			console.log(context);
-			req.session.flash = {
-				type: "success",
-				message: "The post was deleted!"
-			};
+
 			res.render("snippets", context);
 		});
 
 	});
+
+
+	router.get('/allSnippets',  (req, res) => {
+
+		Snip.find({}, function (error, data) {
+
+			// mapping up the object for the view
+			let context = {
+				snippets: data.map(function (snip) {
+					return {
+						name: snip.name,
+						snippets: snip.snippets,
+						id: snip._id
+					};
+				}),
+			};
+
+			res.render("allSnippets", context);
+		});
+
+	});
+
 
 
 
@@ -149,6 +227,7 @@
 			res.redirect('/users/login');
 		}
 	});
+
 
 	passport.use(new LocalStrategy(
 		function(username, password, done) {
