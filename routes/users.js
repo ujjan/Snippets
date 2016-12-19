@@ -94,19 +94,20 @@
 
 
 
-	router.put('/update/:id', function (req, res) {
+	router.post('/update/:id', function (req, res) {
+		var id = req.params.id;
+		var body = _.pick(req.body, ['name', 'snippets']);
+		 Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
+		 if (!snip) {
+		 return res.status(404).send();
 
-	 var id = req.params.id;
-	 Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
-	 if (!snip) {
-	 return res.status(404).send();
-	 res.redirect("/users/snippets")
-	 }
+		 }
 
-	 res.send({snip});
-	 }).catch((e) => {
-	 res.status(400).send();
-	 });
+		 //res.send({snip});
+			 res.redirect("/users/snippets")
+	 	}).catch((e) => {
+	 	res.status(400).send();
+		 });
 
 	});
 
@@ -234,7 +235,7 @@
 			User.getUserByUsername(username, function(err, user){
 				if(err) throw err;
 				if(!user){
-					return done(null, false, {message: 'Unknown User'});
+					return done(null, false, {message: 'Unknown User! Please try again '});
 				}
 
 				User.comparePassword(password, user.password, function(err, isMatch){
@@ -242,7 +243,7 @@
 					if(isMatch){
 						return done(null, user);
 					} else {
-						return done(null, false, {message: 'Invalid password'});
+						return done(null, false, {message: 'Invalid password! Please try again'});
 					}
 				});
 			});
