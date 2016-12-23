@@ -1,24 +1,79 @@
 	var express = require('express');
 	var router = express.Router();
-	var passport = require('passport');
-	var LocalStrategy = require('passport-local').Strategy;
+	//var passport = require('passport');
+	//var LocalStrategy = require('passport-local').Strategy;
 	const {ObjectID} = require('mongodb');
 	var User = require('../models/user');
 	var Snip = require('../models/snip');
 	const _ = require('lodash');
+	var expressValidator = require('express-validator');
+	router.use(expressValidator());
 
 
 
 	// Login
 	router.get('/login', function(req, res){
 		res.render('login');
+	}).post('/login', function (req,res) {
+		User.findOne({username: req.body.username}, function(err, user)
+		{
+			if(err){
+				req.flash('error_msg', 'Something is wrong Please try again')
+				res.redirect('/users/login');
+				throw err;
+			}
+			if(!user){
+				req.flash('error_msg', 'Please check your Username');
+				res.redirect('/users/login');
+
+			}else{
+				user.comparePassword(req.body.password, function(err, userPassword){
+					if(err){
+						req.flash('error_msg', 'Something is wrong Please try again')
+						res.redirect('/users/login');
+					}
+					if(!userPassword){
+						req.flash('error_msg', 'Something is wrong Please try again')
+						res.redirect('/users/login');
+					}
+					else
+					{
+						req.flash('success_msg', 'You are Logged in');
+						req.session.user = true;
+
+						res.redirect('/users/snippets');
+
+					}
+
+				})
+
+			}
+
+
+		})
+
+
+
 	});
+
+
+	//if(req.session && req.session.user) {  write code here  }
+
+
+	router.get('/logout', function(req, res){
+		req.session.user = false;
+
+		req.flash('success_msg', 'You are logged out');
+
+		res.redirect('/users/login');
+	});
+
 
 
 
 	// Create snippets ===========================================
 
-	router.get('/create', ensureAuthenticated, function(req, res){
+	router.get('/create',  function(req, res){
 		res.render('create');
 	});
 	router.post('/create', (req, res)=> {
@@ -66,31 +121,6 @@
 		});
 
 	});
-/*
-
-	router.patch('/update/:id', (req, res) => {
-		var id = req.params.id;
-		var body = _.pick(req.body, ['name', 'snippets']);
-
-		if (!ObjectID.isValid(id)) {
-			return res.status(404).send();
-		}
-
-
-		Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
-			if (!snip) {
-				return res.status(404).send();
-				res.redirect("/users/snippets")
-			}
-
-			res.send({snip});
-		}).catch((e) => {
-			res.status(400).send();
-		});
-	});
-
-
-	*/
 
 
 
@@ -103,7 +133,6 @@
 
 		 }
 
-		 //res.send({snip});
 			 res.redirect("/users/snippets")
 	 	}).catch((e) => {
 	 	res.status(400).send();
@@ -113,7 +142,7 @@
 
 	//Deleting the Snippets========================================
 
-	router.get("/delete/:id", ensureAuthenticated, function(req, res) {
+	router.get("/delete/:id",  function(req, res) {
 			// render the form, send along the id
 			res.render("delete", {id: req.params.id});
 		});
@@ -128,9 +157,11 @@
 
 		});
 
-	//Get att the Snippets =========================================
 
-	router.get('/snippets', ensureAuthenticated, (req, res) => {
+
+	//Get the Snippets  with loged in users >=========================================
+
+	router.get('/snippets',  (req, res) => {
 
 		Snip.find({}, function (error, data) {
 
@@ -150,6 +181,7 @@
 
 	});
 
+	//Get the Snippets  without  loged in users >=========================================
 
 	router.get('/allSnippets',  (req, res) => {
 
@@ -172,22 +204,11 @@
 	});
 
 
-
-
-
-	function ensureAuthenticated(req, res, next){
-		if(req.isAuthenticated()){
-			return next();
-		} else {
-			req.flash('error_msg','You are not logged in');
-			res.redirect('/users/login');
-		}
-	}
-
 	// Register
 	router.get('/register', function(req, res){
 		res.render('register');
 	});
+
 
 	router.post('/register', function(req, res){
 		var name = req.body.name;
@@ -196,7 +217,7 @@
 		var password = req.body.password;
 		var password2 = req.body.password2;
 
-		// Validation
+		//Validation
 		req.checkBody('name', 'Name is required').notEmpty();
 		req.checkBody('email', 'Email is required').notEmpty();
 		req.checkBody('email', 'Email is not valid').isEmail();
@@ -220,7 +241,6 @@
 
 			User.createUser(newUser, function(err, user){
 				if(err) throw err;
-				console.log(err);
 			});
 
 			req.flash('success_msg', 'You are registered and can now login');
@@ -228,6 +248,34 @@
 			res.redirect('/users/login');
 		}
 	});
+
+
+	function authorized (req, res, next) {
+		if (req.session.user) {
+			next();
+		} else {
+			res.redirect('/login');
+		}
+	}
+
+
+//======================================================================================
+
+/*
+	function ensureAuthenticated(req, res, next){
+		if(req.isAuthenticated()){
+			return next();
+		} else {
+			req.flash('error_msg','You are not logged in');
+			res.redirect('/users/login');
+		}
+	}
+
+	// Register
+	router.get('/register', function(req, res){
+		res.render('register');
+	});
+
 
 
 	passport.use(new LocalStrategy(
@@ -259,22 +307,7 @@
 		});
 	});
 
-	router.post('/login',
-		passport.authenticate('local', {successRedirect:'/', failureRedirect:'/users/login',failureFlash: true}),
-		function(req, res) {
-			res.redirect('/');
-		});
-
-	router.get('/logout', function(req, res){
-		req.logout();
-
-		req.flash('success_msg', 'You are logged out');
-
-		res.redirect('/users/login');
-	});
-
-
-
+*/
 
 
 	module.exports = router;
