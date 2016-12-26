@@ -13,7 +13,13 @@
 
 	// Login
 	router.get('/login', function(req, res){
-		res.render('login');
+		if(!req.session.user){
+			res.render('login');
+		}else{
+			res.redirect('/');
+		}
+
+
 	}).post('/login', function (req,res) {
 		User.findOne({username: req.body.username}, function(err, user)
 		{
@@ -73,7 +79,7 @@
 
 	// Create snippets ===========================================
 
-	router.get('/create',  function(req, res){
+	router.get('/create',authorized,  function(req, res){
 		res.render('create');
 	});
 	router.post('/create', (req, res)=> {
@@ -108,7 +114,7 @@
 
 	//Update the Snippets ===================================================
 
-	router.get("/update/:id", function(req, res) {
+	router.get("/update/:id",authorized, function(req, res) {
 		// render the form, send along the id
 		var id = req.params.id;
 		Snip.findOne({_id:id},function (err, foundObject) {
@@ -124,7 +130,7 @@
 
 
 
-	router.post('/update/:id', function (req, res) {
+	router.post('/update/:id',authorized, function (req, res) {
 		var id = req.params.id;
 		var body = _.pick(req.body, ['name', 'snippets']);
 		 Snip.findByIdAndUpdate(id, {$set: body}, {new: true}).then((snip) => {
@@ -142,7 +148,7 @@
 
 	//Deleting the Snippets========================================
 
-	router.get("/delete/:id",  function(req, res) {
+	router.get("/delete/:id", authorized, function(req, res) {
 			// render the form, send along the id
 			res.render("delete", {id: req.params.id});
 		});
@@ -151,7 +157,7 @@
 				if(error) {
 					throw new Error("Something went wrong!");
 				}
-				req.flash('success_msg', 'You are registered and can now login');
+				req.flash('success_msg', 'Snippet was deleted Successfully! ');
 				res.redirect("/users/snippets");
 			});
 
@@ -161,7 +167,7 @@
 
 	//Get the Snippets  with loged in users >=========================================
 
-	router.get('/snippets',  (req, res) => {
+	router.get('/snippets', authorized, (req, res) => {
 
 		Snip.find({}, function (error, data) {
 
@@ -254,60 +260,12 @@
 		if (req.session.user) {
 			next();
 		} else {
-			res.redirect('/login');
-		}
-	}
-
-
-//======================================================================================
-
-/*
-	function ensureAuthenticated(req, res, next){
-		if(req.isAuthenticated()){
-			return next();
-		} else {
-			req.flash('error_msg','You are not logged in');
+			req.flash('error_msg', 'You are not logged in please log in to perform such task');
 			res.redirect('/users/login');
+
 		}
 	}
 
-	// Register
-	router.get('/register', function(req, res){
-		res.render('register');
-	});
-
-
-
-	passport.use(new LocalStrategy(
-		function(username, password, done) {
-			User.getUserByUsername(username, function(err, user){
-				if(err) throw err;
-				if(!user){
-					return done(null, false, {message: 'Unknown User! Please try again '});
-				}
-
-				User.comparePassword(password, user.password, function(err, isMatch){
-					if(err) throw err;
-					if(isMatch){
-						return done(null, user);
-					} else {
-						return done(null, false, {message: 'Invalid password! Please try again'});
-					}
-				});
-			});
-		}));
-
-	passport.serializeUser(function(user, done) {
-		done(null, user.id);
-	});
-
-	passport.deserializeUser(function(id, done) {
-		User.getUserById(id, function(err, user) {
-			done(err, user);
-		});
-	});
-
-*/
 
 
 	module.exports = router;
