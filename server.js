@@ -10,9 +10,6 @@
     var expressValidator = require('express-validator');
     var flash = require('connect-flash');
     var session = require('express-session');
-  //  var passport = require('passport');
-   // var LocalStrategy = require('passport-local').Strategy;
-   // var mongo = require('mongodb');
     var mongoose = require('mongoose');
     mongoose.Promise = global.Promise;
 
@@ -48,31 +45,6 @@
         resave: true,
         httpOnly: true
     }));
-
-    // Passport init
-
-    /*
-    app.use(passport.initialize());
-    app.use(passport.session());
-
-    // Express Validator
-    app.use(expressValidator({
-        errorFormatter: function(param, msg, value) {
-            var namespace = param.split('.')
-                , root    = namespace.shift()
-                , formParam = root;
-
-            while(namespace.length) {
-                formParam += '[' + namespace.shift() + ']';
-            }
-            return {
-                param : formParam,
-                msg   : msg,
-                value : value
-            };
-        }
-    }));
-    */
 
 
     // Connect Flash
